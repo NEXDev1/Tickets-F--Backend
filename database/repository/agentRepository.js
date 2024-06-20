@@ -3,46 +3,100 @@ const { ObjectId } = mongoose.Types;
 const Order = require("../models/OrderSchema");
 const Token = require("../models/TokenSchema");
 
+
 const addAgentDataDB = async (userId, drawTime, date, orderId, tokenList) => {
   try {
     const newOrder = new Order({
       userId: new ObjectId(userId),
       date: date,
       drawTime: drawTime,
-      orderId: orderId, 
-      isImport:0
+      orderId: orderId,
+      isImport: 0
     });
 
-    console.log("newOrder is here", newOrder);
+    console.log("NewOrder is here : ", newOrder);
 
-    const savedUserData = await newOrder
-      .save()
-      .then(async (res) => {
-        console.log("Order saved successfully:", res);
+    const savedOrder = await newOrder.save();
+    console.log("Order saved successfully");
 
-        const tokenPromises = tokenList.map(async (token) => {
-          const newToken = new Token({
-            tokenNumber: token.tokenNumber,
-            count: parseInt(token.count),
-            orderId: res._id,
-            isImport:0
-          });
-
-          return await newToken.save();
-        });
-
-        return Promise.all(tokenPromises);
-      })
-      .catch((error) => {
-        console.error("Error saving order:", error);
-        throw error;
+    const tokenPromises = tokenList.map(async (token) => {
+      const newToken = new Token({
+        tokenNumber: token.tokenNumber,
+        count: parseInt(token.count),
+        orderId: savedOrder._id,
+        isImport: 0
       });
 
-    return savedUserData;
+      console.log("New Token:", newToken);
+      return await newToken.save();
+    });
+
+    const savedTokens = await Promise.all(tokenPromises);
+
+    return { order: savedOrder, tokens: savedTokens };
   } catch (error) {
+    console.error("Error saving order or tokens:", error);
     throw error;
   }
 };
+
+
+
+
+
+
+
+
+
+// const addAgentDataDB = async (userId, drawTime, date, orderId, tokenList) => {
+//   console.log("OrderId : ",orderId);
+//   try {
+//     // Creating a new order object with all required fields
+//     const newOrder = new Order({
+//       userId: new ObjectId(userId),
+//       date: date,
+//       drawTime: drawTime,
+//       orderId: orderId, 
+//       isImport: 0
+//     });
+
+//     console.log("ewOrder is here", newOrder);
+
+//     // Saving the new order to the database
+//     const savedUserData = await newOrder.save();
+
+//     console.log("Order saved successfully:", savedUserData);
+
+//     // Mapping over tokenList to create and save each token
+//     const tokenPromises = tokenList.map(async (token) => {
+//       const newToken = new Token({
+//         tokenNumber: token.tokenNumber,
+//         count: parseInt(token.count),
+//         orderId: savedUserData._id,
+//         isImport: 0
+//       });
+
+//       console.log("New Token :", newToken);
+
+//       return await newToken.save();
+//     });
+
+//     // Waiting for all token promises to be resolved
+//     const savedTokens = await Promise.all(tokenPromises);
+
+//     return { order: savedUserData, tokens: savedTokens };
+//   } catch (error) {
+//     console.error("Error saving order or tokens:", error);
+//     throw error;
+//   }
+// };
+
+// module.exports = addAgentDataDB;
+
+
+
+
+
 
 const getAgentEntity = async (id) => {
   try {

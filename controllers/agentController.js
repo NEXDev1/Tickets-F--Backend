@@ -6,33 +6,39 @@ const {
   getOrderIds,
 } = require("../database/repository/agentRepository");
 const { getAgent } = require("../database/repository/authRepository");
+const Order = require("../database/models/OrderSchema")
 
-// const addEntity = async (req, res) => {
-//   try {
-//     console.log("hai add");
-//     // const { date, tokenNumber, count } = req.body;
-//     let id = '658a603d365ed61de6f39827'
-//     let date = data.now()
-//     let tokenNumber = 22
-//     let count = 10
-//     let res = await addagentDataDB(id, date, tokenNumber, count);
-//     res.status(200).json({ status: "success",  res });
-//   } catch (error) {
-//     res.status(500).json({ error: error.message });
-//   }
-// };
 
 const addEntity = async (req, res) => {
   try {
-    console.log("req.body", req.body);
+    console.log("Add Entity(res.body):", req.body);
 
-    const { _id, drawTime,orderId, date, tokenSets } = req.body;
+    const { _id, drawTime, date, tokenSets } = req.body;
+
+    // Fetch all orderId's from the Order schema and log them
+    const allOrders = await Order.find({}, 'orderId'); // Assuming 'orderId' is the field name
+    const orderIdsArray = allOrders.map(order => order.orderId);
+    // console.log("All Order IDs:", orderIdsArray);
+
+    const orderCount = allOrders.length;
+    // console.log("Total Order Count:", orderCount);
+
+    // Find the largest orderId
+    const largestOrderNum = orderIdsArray.map(orderId => parseInt(orderId.slice(3))).sort((a, b) => b - a)[0];
+    // console.log("Largest Order Number:", largestOrderNum);
+
+    // Generate the new order ID
+    const newOrderId = `ORD${largestOrderNum + 1}`;
+
+    console.log("New Order Id :", newOrderId);
 
     let user = await getAgent(_id);
-    console.log("user", user);
+    // console.log("user", user);
 
     if (user) {
-      let result = await addAgentDataDB(_id, drawTime, date,orderId, tokenSets);
+      // Create the new order document
+      let result = await addAgentDataDB(_id, drawTime, date, newOrderId, tokenSets);
+
       console.log(result);
       res.status(200).json({ status: "success", result });
     } else {
@@ -44,6 +50,11 @@ const addEntity = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+
+
+
+
 
 const listEntity = async (req, res) => {
   try {
